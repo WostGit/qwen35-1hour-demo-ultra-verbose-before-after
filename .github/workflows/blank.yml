@@ -1,0 +1,337 @@
+name: qwen35-1hour-demo-ultra-verbose-before-after
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_name:
+        description: 'MLX model id'
+        required: false
+        default: 'mlx-community/Qwen3.5-2B-MLX-4bit'
+      learning_rate:
+        description: 'LoRA learning rate'
+        required: false
+        default: '1e-4'
+      wall_clock_budget_minutes:
+        description: 'Soft stop budget for the demo job'
+        required: false
+        default: '60'
+
+jobs:
+  demo:
+    runs-on: macos-14
+    timeout-minutes: 60
+    env:
+      PYTHONUNBUFFERED: '1'
+      HF_HUB_ENABLE_HF_TRANSFER: '1'
+      PROJECT_NAME: qwen35_1hour_demo_ultra_verbose_before_after
+      EMBEDDED_DATASET_GZ_B64: |
+        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
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Restore model cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/huggingface
+            ~/Library/Caches/huggingface
+          key: ${{ runner.os }}-${{ runner.arch }}-hf-qwen35-2b-mlx4bit-v1
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python -m pip install --upgrade pip
+          pip install mlx-lm huggingface_hub hf_transfer
+
+      - name: Run one-hour ultra-verbose before/after demo
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cat > run_1hour_demo.py <<'PY'
+          import os
+          import gc
+          import sys
+          import json
+          import time
+          import gzip
+          import base64
+          import shutil
+          import pathlib
+          import subprocess
+
+          PROJECT_NAME = os.environ.get("PROJECT_NAME", "qwen35_1hour_demo_ultra_verbose_before_after")
+          MODEL_NAME = os.environ.get("INPUT_MODEL_NAME") or "${{ inputs.model_name }}"
+          LEARNING_RATE = os.environ.get("INPUT_LEARNING_RATE") or "${{ inputs.learning_rate }}"
+          WALL_CLOCK_BUDGET_MINUTES = int(os.environ.get("INPUT_WALL_CLOCK_BUDGET_MINUTES") or "${{ inputs.wall_clock_budget_minutes }}")
+          EMBEDDED_DATASET_GZ_B64 = os.environ["EMBEDDED_DATASET_GZ_B64"]
+
+          DEMO_PLAN = [
+              {"label": "ultra_s1_i1", "subset_size": 1, "iters": 1, "forward_repeats": 1},
+              {"label": "ultra_s1_i5", "subset_size": 1, "iters": 5, "forward_repeats": 1},
+              {"label": "ultra_s10_i1", "subset_size": 10, "iters": 1, "forward_repeats": 1},
+              {"label": "ultra_s10_i5", "subset_size": 10, "iters": 5, "forward_repeats": 1},
+              {"label": "ultra_s10_i5_r2", "subset_size": 10, "iters": 5, "forward_repeats": 2},
+          ]
+
+          def log(title):
+              print("=" * 120)
+              print(title)
+              print("=" * 120)
+
+          def sanitize_text(text):
+              if text is None:
+                  return ""
+              return str(text).replace("\r\n", "\n").replace("\r", "\n").strip()
+
+          def truncate_text(text, max_chars):
+              return sanitize_text(text)[:max_chars]
+
+          def build_ultra_verbose_example(record):
+              problem = truncate_text(record.get("problem", ""), 800)
+              thinking = truncate_text(record.get("thinking", ""), 1400)
+              solution = truncate_text(record.get("solution", ""), 300)
+
+              prompt = (
+                  "You are an ultra-verbose mathematical reasoning assistant.\n"
+                  "Solve the following problem carefully.\n"
+                  "Explain every major step in detail.\n"
+                  "State intermediate calculations explicitly.\n"
+                  "Double-check your arithmetic before giving the final answer.\n"
+                  "Be highly verbose, structured, and explicit.\n\n"
+                  "Problem:\n"
+                  f"{problem}\n\n"
+                  "You must answer in exactly this format:\n"
+                  "<think>\n"
+                  "Detailed reasoning with multiple explicit steps, checks, and explanations.\n"
+                  "</think>\n"
+                  "Final answer: <your final answer>"
+              )
+
+              completion = (
+                  "<think>\n"
+                  f"{thinking}\n"
+                  "\n"
+                  "I will double-check the reasoning above before finalizing the answer.\n"
+                  "</think>\n"
+                  "Final answer: "
+                  f"{solution}"
+              )
+
+              return {"prompt": prompt, "completion": completion}
+
+          def decode_records():
+              payload = "".join(EMBEDDED_DATASET_GZ_B64.split())
+              raw = gzip.decompress(base64.b64decode(payload))
+              return json.loads(raw.decode("utf-8"))
+
+          def write_jsonl(path, rows):
+              with open(path, "w", encoding="utf-8") as f:
+                  for row in rows:
+                      f.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+          def run_cmd(cmd):
+              start = time.perf_counter()
+              proc = subprocess.run(cmd, capture_output=True, text=True)
+              elapsed = time.perf_counter() - start
+              return proc, elapsed
+
+          def timed_generate(model_name, prompt, adapter_path=None):
+              cmd = [
+                  "python", "-m", "mlx_lm", "generate",
+                  "--model", model_name,
+                  "--prompt", prompt,
+                  "--max-tokens", "220",
+                  "--temp", "0",
+              ]
+              if adapter_path:
+                  cmd.extend(["--adapter-path", adapter_path])
+              proc, elapsed = run_cmd(cmd)
+              return proc.returncode, proc.stdout.strip(), proc.stderr.strip(), elapsed
+
+          def summarize_text(text, limit=500):
+              text = text.strip()
+              if len(text) <= limit:
+                  return text
+              return text[:limit]
+
+          def main():
+              budget_seconds = WALL_CLOCK_BUDGET_MINUTES * 60
+              start_time = time.perf_counter()
+
+              log("ONE HOUR ULTRA-VERBOSE BEFORE/AFTER DEMO START")
+              print(f"python_executable: {sys.executable}")
+              print(f"python_version: {sys.version}")
+              print(f"cwd: {os.getcwd()}")
+              print(f"project_name: {PROJECT_NAME}")
+              print(f"model_name: {MODEL_NAME}")
+              print(f"learning_rate: {LEARNING_RATE}")
+              print(f"wall_clock_budget_minutes: {WALL_CLOCK_BUDGET_MINUTES}")
+
+              all_records = json.loads(gzip.decompress(base64.b64decode("".join(EMBEDDED_DATASET_GZ_B64.split()))).decode("utf-8"))
+              examples = [build_ultra_verbose_example(r) for r in all_records[:10]]
+
+              print(f"embedded_record_count: {len(examples)}")
+              print(f"demo_plan: {json.dumps(DEMO_PLAN)}")
+
+              work_root = pathlib.Path(f"./{PROJECT_NAME}_work")
+              if work_root.exists():
+                  shutil.rmtree(work_root)
+              work_root.mkdir(parents=True, exist_ok=True)
+
+              results = []
+
+              for plan in DEMO_PLAN:
+                  elapsed_total = time.perf_counter() - start_time
+                  remaining = budget_seconds - elapsed_total
+                  if remaining < 240:
+                      print(f"Stopping early because remaining budget is only {remaining:.2f} seconds.")
+                      break
+
+                  label = plan["label"]
+                  subset_size = plan["subset_size"]
+                  train_iters = plan["iters"]
+                  forward_repeats = plan["forward_repeats"]
+
+                  log(f"RUN START {label}")
+                  print(f"elapsed_total_seconds_before_run: {elapsed_total:.6f}")
+                  print(f"remaining_budget_seconds_before_run: {remaining:.6f}")
+
+                  subset_rows = examples[:subset_size]
+                  subset_dir = work_root / label
+                  data_dir = subset_dir / "data"
+                  adapter_dir = subset_dir / "adapters"
+                  data_dir.mkdir(parents=True, exist_ok=True)
+                  adapter_dir.mkdir(parents=True, exist_ok=True)
+
+                  write_jsonl(data_dir / "train.jsonl", subset_rows)
+                  write_jsonl(data_dir / "test.jsonl", subset_rows[:1])
+
+                  prompt = subset_rows[0]["prompt"]
+
+                  print(f"train_rows: {len(subset_rows)}")
+                  print(f"sample_prompt_preview: {prompt[:400]!r}")
+                  print(f"sample_completion_preview: {subset_rows[0]['completion'][:400]!r}")
+
+                  log(f"BASELINE FORWARD BEFORE FINETUNING {label}")
+                  base_forward_times = []
+                  base_outputs = []
+                  for i in range(forward_repeats):
+                      rc, out, err, f_elapsed = timed_generate(MODEL_NAME, prompt, None)
+                      print(f"base_forward_run_{i+1:03d}_return_code: {rc}")
+                      print(f"base_forward_run_{i+1:03d}_elapsed_seconds: {f_elapsed:.6f}")
+                      print(f"base_forward_run_{i+1:03d}_stdout_preview: {summarize_text(out, 600)!r}")
+                      if err:
+                          print(f"base_forward_run_{i+1:03d}_stderr_preview: {summarize_text(err, 300)!r}")
+                      if rc != 0:
+                          raise RuntimeError(f"Baseline forward failed for {label} run {i+1}")
+                      base_forward_times.append(f_elapsed)
+                      base_outputs.append(summarize_text(out, 700))
+
+                  gc.collect()
+                  time.sleep(2)
+
+                  log(f"TRAIN START {label}")
+                  train_cmd = [
+                      "python", "-m", "mlx_lm", "lora",
+                      "--train",
+                      "--model", MODEL_NAME,
+                      "--data", str(data_dir),
+                      "--adapter-path", str(adapter_dir),
+                      "--iters", str(train_iters),
+                      "--batch-size", "1",
+                      "--learning-rate", str(LEARNING_RATE),
+                      "--steps-per-report", "1",
+                      "--steps-per-eval", "1000000",
+                      "--mask-prompt",
+                  ]
+                  print("train_command:", " ".join(train_cmd))
+                  train_proc, train_elapsed = run_cmd(train_cmd)
+                  print("TRAIN STDOUT START")
+                  print(train_proc.stdout)
+                  print("TRAIN STDOUT END")
+                  if train_proc.stderr:
+                      print("TRAIN STDERR START")
+                      print(train_proc.stderr)
+                      print("TRAIN STDERR END")
+                  print(f"train_return_code: {train_proc.returncode}")
+                  print(f"train_elapsed_seconds: {train_elapsed:.6f}")
+                  if train_proc.returncode != 0:
+                      raise RuntimeError(f"Training failed for {label}")
+
+                  adapter_file = adapter_dir / "adapters.safetensors"
+                  if not adapter_file.exists():
+                      raise RuntimeError(f"Expected adapter file missing for {label}")
+
+                  gc.collect()
+                  time.sleep(2)
+
+                  log(f"TUNED FORWARD AFTER FINETUNING {label}")
+                  tuned_forward_times = []
+                  tuned_outputs = []
+                  for i in range(forward_repeats):
+                      rc, out, err, f_elapsed = timed_generate(MODEL_NAME, prompt, str(adapter_dir))
+                      print(f"tuned_forward_run_{i+1:03d}_return_code: {rc}")
+                      print(f"tuned_forward_run_{i+1:03d}_elapsed_seconds: {f_elapsed:.6f}")
+                      print(f"tuned_forward_run_{i+1:03d}_stdout_preview: {summarize_text(out, 600)!r}")
+                      if err:
+                          print(f"tuned_forward_run_{i+1:03d}_stderr_preview: {summarize_text(err, 300)!r}")
+                      if rc != 0:
+                          raise RuntimeError(f"Tuned forward failed for {label} run {i+1}")
+                      tuned_forward_times.append(f_elapsed)
+                      tuned_outputs.append(summarize_text(out, 700))
+
+                  avg_base = sum(base_forward_times) / len(base_forward_times)
+                  avg_tuned = sum(tuned_forward_times) / len(tuned_forward_times)
+
+                  results.append({
+                      "label": label,
+                      "subset_size": subset_size,
+                      "train_iters": train_iters,
+                      "forward_repeats": forward_repeats,
+                      "before_finetuning": {
+                          "avg_forward_seconds": avg_base,
+                          "projected_forward_1k_seconds": avg_base * 1000.0,
+                          "projected_forward_10k_seconds": avg_base * 10000.0,
+                          "sample_output_preview": base_outputs[0],
+                      },
+                      "training": {
+                          "train_elapsed_seconds": train_elapsed,
+                          "train_seconds_per_iter": train_elapsed / train_iters,
+                      },
+                      "after_finetuning": {
+                          "avg_forward_seconds": avg_tuned,
+                          "projected_forward_1k_seconds": avg_tuned * 1000.0,
+                          "projected_forward_10k_seconds": avg_tuned * 10000.0,
+                          "sample_output_preview": tuned_outputs[0],
+                      },
+                      "delta_after_minus_before_seconds": avg_tuned - avg_base,
+                      "elapsed_total_seconds_after_run": time.perf_counter() - start_time,
+                  })
+
+                  gc.collect()
+                  time.sleep(2)
+
+              total_elapsed = time.perf_counter() - start_time
+              log("FINAL SUMMARY BEFORE VS AFTER FINETUNING")
+              print(json.dumps({
+                  "completed_runs": len(results),
+                  "total_elapsed_seconds": total_elapsed,
+                  "wall_clock_budget_seconds": budget_seconds,
+                  "results": results,
+              }, indent=2))
+
+          if __name__ == "__main__":
+              main()
+          PY
+          INPUT_MODEL_NAME="${{ inputs.model_name }}" \
+          INPUT_LEARNING_RATE="${{ inputs.learning_rate }}" \
+          INPUT_WALL_CLOCK_BUDGET_MINUTES="${{ inputs.wall_clock_budget_minutes }}" \
+          python run_1hour_demo.py
