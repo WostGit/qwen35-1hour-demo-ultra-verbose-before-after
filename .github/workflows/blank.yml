@@ -75,10 +75,10 @@ jobs:
 
           DEMO_PLAN = [
               {"label": "ultra_s1_i1", "subset_size": 1, "iters": 1, "forward_repeats": 1},
-              {"label": "ultra_s1_i5", "subset_size": 1, "iters": 5, "forward_repeats": 1},
+              {"label": "ultra_s1_i3", "subset_size": 1, "iters": 3, "forward_repeats": 1},
               {"label": "ultra_s10_i1", "subset_size": 10, "iters": 1, "forward_repeats": 1},
-              {"label": "ultra_s10_i5", "subset_size": 10, "iters": 5, "forward_repeats": 1},
-              {"label": "ultra_s10_i5_r2", "subset_size": 10, "iters": 5, "forward_repeats": 2},
+              {"label": "ultra_s10_i3", "subset_size": 10, "iters": 3, "forward_repeats": 1},
+              {"label": "ultra_s10_i3_r2", "subset_size": 10, "iters": 3, "forward_repeats": 2},
           ]
 
           def log(title):
@@ -95,9 +95,9 @@ jobs:
               return sanitize_text(text)[:max_chars]
 
           def build_ultra_verbose_example(record):
-              problem = truncate_text(record.get("problem", ""), 800)
-              thinking = truncate_text(record.get("thinking", ""), 1400)
-              solution = truncate_text(record.get("solution", ""), 300)
+              problem = truncate_text(record.get("problem", ""), 420)
+              thinking = truncate_text(record.get("thinking", ""), 520)
+              solution = truncate_text(record.get("solution", ""), 160)
 
               prompt = (
                   "You are an ultra-verbose mathematical reasoning assistant.\n"
@@ -110,7 +110,7 @@ jobs:
                   f"{problem}\n\n"
                   "You must answer in exactly this format:\n"
                   "<think>\n"
-                  "Detailed reasoning with multiple explicit steps, checks, and explanations.\n"
+                  "Detailed reasoning with explicit steps and checks.\n"
                   "</think>\n"
                   "Final answer: <your final answer>"
               )
@@ -119,7 +119,7 @@ jobs:
                   "<think>\n"
                   f"{thinking}\n"
                   "\n"
-                  "I will double-check the reasoning above before finalizing the answer.\n"
+                  "I have checked the reasoning above before finalizing the answer.\n"
                   "</think>\n"
                   "Final answer: "
                   f"{solution}"
@@ -148,7 +148,7 @@ jobs:
                   "python", "-m", "mlx_lm", "generate",
                   "--model", model_name,
                   "--prompt", prompt,
-                  "--max-tokens", "220",
+                  "--max-tokens", "180",
                   "--temp", "0",
               ]
               if adapter_path:
@@ -158,8 +158,6 @@ jobs:
 
           def summarize_text(text, limit=500):
               text = text.strip()
-              if len(text) <= limit:
-                  return text
               return text[:limit]
 
           def main():
@@ -175,7 +173,7 @@ jobs:
               print(f"learning_rate: {LEARNING_RATE}")
               print(f"wall_clock_budget_minutes: {WALL_CLOCK_BUDGET_MINUTES}")
 
-              all_records = json.loads(gzip.decompress(base64.b64decode("".join(EMBEDDED_DATASET_GZ_B64.split()))).decode("utf-8"))
+              all_records = decode_records()
               examples = [build_ultra_verbose_example(r) for r in all_records[:10]]
 
               print(f"embedded_record_count: {len(examples)}")
@@ -220,24 +218,6 @@ jobs:
                   print(f"sample_prompt_preview: {prompt[:400]!r}")
                   print(f"sample_completion_preview: {subset_rows[0]['completion'][:400]!r}")
 
-                  log(f"BASELINE FORWARD BEFORE FINETUNING {label}")
-                  base_forward_times = []
-                  base_outputs = []
-                  for i in range(forward_repeats):
-                      rc, out, err, f_elapsed = timed_generate(MODEL_NAME, prompt, None)
-                      print(f"base_forward_run_{i+1:03d}_return_code: {rc}")
-                      print(f"base_forward_run_{i+1:03d}_elapsed_seconds: {f_elapsed:.6f}")
-                      print(f"base_forward_run_{i+1:03d}_stdout_preview: {summarize_text(out, 600)!r}")
-                      if err:
-                          print(f"base_forward_run_{i+1:03d}_stderr_preview: {summarize_text(err, 300)!r}")
-                      if rc != 0:
-                          raise RuntimeError(f"Baseline forward failed for {label} run {i+1}")
-                      base_forward_times.append(f_elapsed)
-                      base_outputs.append(summarize_text(out, 700))
-
-                  gc.collect()
-                  time.sleep(2)
-
                   log(f"TRAIN START {label}")
                   train_cmd = [
                       "python", "-m", "mlx_lm", "lora",
@@ -271,7 +251,25 @@ jobs:
                       raise RuntimeError(f"Expected adapter file missing for {label}")
 
                   gc.collect()
-                  time.sleep(2)
+                  time.sleep(4)
+
+                  log(f"BASELINE FORWARD FOR SUMMARY {label}")
+                  base_forward_times = []
+                  base_outputs = []
+                  for i in range(forward_repeats):
+                      rc, out, err, f_elapsed = timed_generate(MODEL_NAME, prompt, None)
+                      print(f"base_forward_run_{i+1:03d}_return_code: {rc}")
+                      print(f"base_forward_run_{i+1:03d}_elapsed_seconds: {f_elapsed:.6f}")
+                      print(f"base_forward_run_{i+1:03d}_stdout_preview: {summarize_text(out, 600)!r}")
+                      if err:
+                          print(f"base_forward_run_{i+1:03d}_stderr_preview: {summarize_text(err, 300)!r}")
+                      if rc != 0:
+                          raise RuntimeError(f"Baseline forward failed for {label} run {i+1}")
+                      base_forward_times.append(f_elapsed)
+                      base_outputs.append(summarize_text(out, 700))
+
+                  gc.collect()
+                  time.sleep(4)
 
                   log(f"TUNED FORWARD AFTER FINETUNING {label}")
                   tuned_forward_times = []
@@ -317,7 +315,7 @@ jobs:
                   })
 
                   gc.collect()
-                  time.sleep(2)
+                  time.sleep(3)
 
               total_elapsed = time.perf_counter() - start_time
               log("FINAL SUMMARY BEFORE VS AFTER FINETUNING")
